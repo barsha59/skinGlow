@@ -1,16 +1,17 @@
-# routes.py
+# routes.py - FASHION E-COMMERCE SITE
 from flask import Blueprint, request, jsonify, current_app
 from extensions import db
 from models import Product, Order, Review, User, Wishlist 
 import stripe
 import os
 
-print("✅ routes.py loaded")
+print("✅ routes.py loaded - Fashion Store")
 
 routes_bp = Blueprint("routes", __name__)
 
 # Stripe test secret key
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+
 # ----------------------
 # GET all products
 # ----------------------
@@ -33,7 +34,8 @@ def get_products():
             "reviews": p.review_count,
             "category": p.category,
             "stock": p.stock,
-            "image": p.image_url
+            "image": p.image_url,
+            "description": p.description
         }
         for p in products
     ])
@@ -52,7 +54,8 @@ def get_product(product_id):
         "reviews": product.review_count,
         "category": product.category,
         "stock": product.stock,
-        "image_url": product.image_url
+        "image_url": product.image_url,
+        "description": product.description
     })
 
 
@@ -114,7 +117,7 @@ def create_order():
 @routes_bp.route('/api/reviews', methods=['POST'])
 def add_review():
     data = request.json
-    print("DEBUG - Received review data:", data)  # <-- log it
+    print("DEBUG - Received review data:", data)
     product_id = data.get("product_id")
     rating = data.get("rating")
     comment = data.get("comment", "")
@@ -168,8 +171,6 @@ def confirm_payment(order_id):
     order.status = "Paid"
     db.session.commit()
     return jsonify({"message": f"Order {order_id} marked as Paid"})
-
-# routes.py - ADD THESE NEW ROUTES
 
 # ----------------------
 # USER AUTHENTICATION
@@ -327,8 +328,6 @@ def get_products_by_category(category):
 # ----------------------
 @routes_bp.route('/api/wishlist', methods=['GET'])
 def get_wishlist():
-    # For now, we'll use user_id from query param
-    # Later you can get from session/token
     user_id = request.args.get('user_id')
     
     if not user_id:
@@ -418,7 +417,6 @@ def check_wishlist():
 def check_database():
     """Check if database has products"""
     try:
-        # Count products in database
         product_count = Product.query.count()
         
         return jsonify({
@@ -435,7 +433,7 @@ def check_database():
 
 @routes_bp.route('/api/add-sample-products')
 def add_sample_products():
-    """Add sample products to empty database"""
+    """Add sample fashion products to empty database"""
     try:
         # Check current count
         current_count = Product.query.count()
@@ -446,57 +444,87 @@ def add_sample_products():
                 "message": f"Already have {current_count} products. No need to add samples."
             })
         
-        # Sample products data
+        # SAMPLE FASHION PRODUCTS
         sample_products = [
             {
-                "name": "Gaming Laptop Pro",
-                "price": 1299.99,
+                "name": "Urban Threads Premium T-Shirt",
+                "price": 24.99,
                 "rating": 4.5,
                 "review_count": 128,
-                "category": "Laptops",
-                "stock": 15,
-                "image_url": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400",
-                "description": "High-performance gaming laptop with RTX 4070"
+                "category": "T-Shirts",
+                "stock": 100,
+                "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
+                "description": "100% Cotton, comfortable fit, modern design"
             },
             {
-                "name": "Wireless Mouse",
-                "price": 29.99,
-                "rating": 4.2,
+                "name": "Designer Denim Jeans",
+                "price": 59.99,
+                "rating": 4.3,
                 "review_count": 89,
-                "category": "Accessories",
+                "category": "Jeans",
                 "stock": 50,
-                "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w-400",
-                "description": "Ergonomic wireless mouse with long battery life"
+                "image_url": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
+                "description": "Slim fit, stretch denim, premium quality"
             },
             {
-                "name": "Mechanical Keyboard",
-                "price": 89.99,
+                "name": "Summer Floral Dress",
+                "price": 39.99,
                 "rating": 4.7,
                 "review_count": 203,
-                "category": "Accessories",
-                "stock": 25,
-                "image_url": "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400",
-                "description": "RGB mechanical keyboard with blue switches"
-            },
-            {
-                "name": "27-inch 4K Monitor",
-                "price": 399.99,
-                "rating": 4.4,
-                "review_count": 67,
-                "category": "Monitors",
-                "stock": 12,
-                "image_url": "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=400",
-                "description": "Ultra HD monitor with HDR support"
-            },
-            {
-                "name": "Noise Cancelling Headphones",
-                "price": 199.99,
-                "rating": 4.8,
-                "review_count": 312,
-                "category": "Audio",
+                "category": "Dresses",
                 "stock": 30,
-                "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
-                "description": "Premium wireless headphones with ANC"
+                "image_url": "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?w=400&h=400&fit=crop",
+                "description": "Lightweight floral pattern, perfect for summer"
+            },
+            {
+                "name": "Classic Leather Jacket",
+                "price": 89.99,
+                "rating": 4.6,
+                "review_count": 67,
+                "category": "Jackets",
+                "stock": 20,
+                "image_url": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop",
+                "description": "Genuine leather, timeless style"
+            },
+            {
+                "name": "Casual Sneakers",
+                "price": 49.99,
+                "rating": 4.4,
+                "review_count": 156,
+                "category": "Footwear",
+                "stock": 75,
+                "image_url": "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
+                "description": "Comfortable everyday shoes, versatile style"
+            },
+            {
+                "name": "Winter Beanie",
+                "price": 19.99,
+                "rating": 4.2,
+                "review_count": 45,
+                "category": "Accessories",
+                "stock": 150,
+                "image_url": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=400&h=400&fit=crop",
+                "description": "Warm woolen beanie, multiple colors available"
+            },
+            {
+                "name": "Formal Blazer",
+                "price": 79.99,
+                "rating": 4.5,
+                "review_count": 92,
+                "category": "Suits & Blazers",
+                "stock": 25,
+                "image_url": "https://images.unsplash.com/photo-1594938374182-2510c5c63f8a?w=400&h=400&fit=crop",
+                "description": "Professional look, perfect for office wear"
+            },
+            {
+                "name": "Yoga Leggings",
+                "price": 34.99,
+                "rating": 4.8,
+                "review_count": 210,
+                "category": "Activewear",
+                "stock": 60,
+                "image_url": "https://images.unsplash.com/photo-1587563871167-1ee9c731c62a?w=400&h=400&fit=crop",
+                "description": "High-waisted, moisture-wicking, comfortable fit"
             }
         ]
         
@@ -521,8 +549,8 @@ def add_sample_products():
         
         return jsonify({
             "status": "success",
-            "message": f"Added {added_count} sample products to database",
-            "products_added": sample_products
+            "message": f"Added {added_count} fashion products to database",
+            "products_added": [p["name"] for p in sample_products]
         })
         
     except Exception as e:
@@ -538,106 +566,10 @@ def debug_info():
     
     return jsonify({
         "backend_running": True,
-        "service": "tech-haven-4r4y.onrender.com",
+        "store_type": "Fashion E-commerce",
         "database_url_exists": bool(os.environ.get('DATABASE_URL')),
         "total_products": Product.query.count(),
         "total_users": User.query.count(),
         "total_orders": Order.query.count(),
         "environment": "production"
     })
-
-# for web 2
-@app.route('/api/admin/add-sample-products', methods=['POST'])
-def add_sample_products():
-    try:
-        # Sample product data
-        sample_products = [
-            {
-                'name': 'Urban Threads Premium T-Shirt',
-                'price': 24.99,
-                'description': '100% Cotton, comfortable fit',
-                'image_url': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
-                'category': 'Clothing',
-                'stock': 100
-            },
-            {
-                'name': 'Designer Denim Jeans',
-                'price': 59.99,
-                'description': 'Slim fit, stretch denim',
-                'image_url': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w-400&h=400&fit=crop',
-                'category': 'Clothing',
-                'stock': 50
-            },
-            {
-                'name': 'Summer Floral Dress',
-                'price': 39.99,
-                'description': 'Lightweight floral pattern dress',
-                'image_url': 'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?w=400&h=400&fit=crop',
-                'category': 'Clothing',
-                'stock': 30
-            },
-            {
-                'name': 'Leather Jacket',
-                'price': 89.99,
-                'description': 'Genuine leather, classic style',
-                'image_url': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop',
-                'category': 'Clothing',
-                'stock': 20
-            },
-            {
-                'name': 'Casual Sneakers',
-                'price': 49.99,
-                'description': 'Comfortable everyday shoes',
-                'image_url': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
-                'category': 'Footwear',
-                'stock': 75
-            },
-            {
-                'name': 'Winter Beanie',
-                'price': 19.99,
-                'description': 'Warm woolen beanie',
-                'image_url': 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=400&h=400&fit=crop',
-                'category': 'Accessories',
-                'stock': 150
-            }
-        ]
-        
-        # Get database connection
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        added_count = 0
-        
-        for product in sample_products:
-            # Check if product already exists
-            cur.execute('SELECT id FROM products WHERE name = %s', (product['name'],))
-            if not cur.fetchone():
-                # Insert new product
-                cur.execute('''
-                    INSERT INTO products (name, price, description, image_url, category, stock)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (
-                    product['name'],
-                    product['price'],
-                    product['description'],
-                    product['image_url'],
-                    product['category'],
-                    product['stock']
-                ))
-                added_count += 1
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-        return jsonify({
-            "success": True,
-            "message": f"Added {added_count} new sample products",
-            "total_sample_products": len(sample_products)
-        }), 201
-        
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500

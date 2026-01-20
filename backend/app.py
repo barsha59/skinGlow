@@ -35,6 +35,6 @@ app.register_blueprint(routes_bp)
 @app.route("/")
 def home():
     return {"message": "Urban-Threads Website 2 API Running"}
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5001))  # Uses PORT from environment or defaults to 5001
+    app.run(host="0.0.0.0", port=port)
