@@ -5,7 +5,7 @@ import axios from "axios";
 import API_URL from "../config"; // Import API_URL from config
 
 const Register = ({ onRegister }) => {
-  const [name, setName] = useState("");
+const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,10 +31,11 @@ const Register = ({ onRegister }) => {
 
     try {
       const response = await axios.post(`${API_URL}/api/register`, {
-        name,
-        email,
-        password
-      });
+  username,    // changed 'name' to 'username'
+  email,
+  password,
+  confirm_password: confirmPassword  // optional, if backend expects it
+});
       
       // Store user info
       localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -57,15 +58,16 @@ const Register = ({ onRegister }) => {
       
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "15px" }}>
-          <label>Name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ width: "100%", padding: "8px" }}
-          />
-        </div>
+  <label>Username:</label>
+  <input
+    type="text"
+    value={username}
+    onChange={(e) => setUsername(e.target.value)}
+    required
+    style={{ width: "100%", padding: "8px" }}
+  />
+</div>
+
         
         <div style={{ marginBottom: "15px" }}>
           <label>Email:</label>

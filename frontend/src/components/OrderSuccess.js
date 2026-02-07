@@ -11,7 +11,7 @@ const OrderSuccess = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState({});
   const [orderDetails, setOrderDetails] = useState({
-    orderId: Date.now().toString().slice(-8), // Generate a fake order ID for demo
+    orderId: Date.now().toString().slice(-8), 
     date: new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',

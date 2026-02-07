@@ -1,3 +1,2 @@
-// config.js
-const API_URL = "http://localhost:5001";
+const API_URL = "http://107.21.32.199:5002/";
 export default API_URL;

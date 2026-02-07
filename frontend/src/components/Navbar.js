@@ -21,7 +21,7 @@ const Navbar = ({ user, onLogout, cartCount }) => {
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
         <Link to="/products" style={{ color: "white", textDecoration: "none", fontSize: "20px" }}>
-           👕 Urban Threads
+            SkinGlow
         </Link>
         
         <div style={{ display: "flex", gap: "15px" }}>

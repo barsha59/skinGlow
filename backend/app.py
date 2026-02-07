@@ -55,8 +55,8 @@ app.register_blueprint(routes_bp)
 
 @app.route("/")
 def home():
-    return {"message": "Urban-Threads Website 2 API Running - PostgreSQL Edition"}
+    return {"message": "skinGlow Website 3 API Running - PostgreSQL Edition"}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))  # Uses PORT from environment or defaults to 5001
+    port = int(os.environ.get("PORT", 5002))  # Uses PORT from environment or defaults to 5001
     app.run(host="0.0.0.0", port=port, debug=True)

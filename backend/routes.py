@@ -1,4 +1,4 @@
-# routes.py - FASHION E-COMMERCE SITE
+# routes.py - SKIN GLOW E-COMMERCE SITE
 from flask import Blueprint, request, jsonify, current_app
 from extensions import db
 from models import Product, Order, Review, User, Wishlist 
@@ -6,12 +6,11 @@ import stripe
 import os
 import traceback
 
-
-print("✅ routes.py loaded - Fashion Store")
+print("✅ routes.py loaded - SkinGlow Store")
 
 routes_bp = Blueprint("routes", __name__)
 
-# Stripe test secret key
+# Stripe secret key from .env
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 print("Stripe API Key loaded?", stripe.api_key is not None)
 
@@ -71,7 +70,7 @@ def create_order():
     customer_name = data.get("customer_name")
     address = data.get("address")
     phone = data.get("phone")
-    cart_items = data.get("cart")  # Expecting: [{"product_id":1,"quantity":2}, ...]
+    cart_items = data.get("cart")  # [{"product_id":1,"quantity":2}, ...]
 
     if not customer_name or not address or not phone:
         return jsonify({"error": "Customer info is required"}), 400
@@ -120,7 +119,6 @@ def create_order():
 @routes_bp.route('/api/reviews', methods=['POST'])
 def add_review():
     data = request.json
-    print("DEBUG - Received review data:", data)
     product_id = data.get("product_id")
     rating = data.get("rating")
     comment = data.get("comment", "")
@@ -139,6 +137,7 @@ def add_review():
 
     db.session.commit()
     return jsonify({"message": "Review added successfully"})
+
 
 # ----------------------
 # STRIPE PAYMENT
@@ -175,6 +174,7 @@ def confirm_payment(order_id):
     db.session.commit()
     return jsonify({"message": f"Order {order_id} marked as Paid"})
 
+
 # ----------------------
 # USER AUTHENTICATION
 # ----------------------
@@ -188,12 +188,10 @@ def register():
     if not email or not name or not password:
         return jsonify({"error": "All fields are required"}), 400
     
-    # Check if user exists
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({"error": "Email already registered"}), 400
     
-    # Create new user
     user = User(email=email, name=name)
     user.set_password(password)
     
@@ -223,317 +221,106 @@ def login():
         "user": {"id": user.id, "email": user.email, "name": user.name}
     })
 
-# ----------------------
-# PRODUCT SEARCH (FOR CHATBOT)
-# ----------------------
-@routes_bp.route('/api/products/search', methods=['GET'])
-def search_products():
-    query = request.args.get('q', '').lower()
-    category = request.args.get('category', '')
-    min_price = request.args.get('min_price')
-    max_price = request.args.get('max_price')
-    
-    # Start with all products
-    products_query = Product.query
-    
-    # Apply filters
-    if query:
-        products_query = products_query.filter(
-            Product.name.ilike(f'%{query}%') | 
-            Product.description.ilike(f'%{query}%')
-        )
-    
-    if category:
-        products_query = products_query.filter_by(category=category)
-    
-    if min_price:
-        try:
-            products_query = products_query.filter(Product.price >= float(min_price))
-        except:
-            pass
-    
-    if max_price:
-        try:
-            products_query = products_query.filter(Product.price <= float(max_price))
-        except:
-            pass
-    
-    products = products_query.all()
-    
-    return jsonify([
-        {
-            "id": p.id,
-            "name": p.name,
-            "price": p.price,
-            "rating": p.rating,
-            "reviews": p.review_count,
-            "category": p.category,
-            "stock": p.stock,
-            "image": p.image_url,
-            "description": p.description
-        }
-        for p in products
-    ])
 
 # ----------------------
-# GET PRODUCT DETAILS WITH REVIEWS
+# ADD SAMPLE SKINCARE PRODUCTS
 # ----------------------
-@routes_bp.route('/api/products/<int:product_id>/details', methods=['GET'])
-def get_product_details(product_id):
-    product = Product.query.get(product_id)
-    if not product:
-        return jsonify({"error": "Product not found"}), 404
-    
-    # Get reviews for this product
-    reviews = Review.query.filter_by(product_id=product_id).all()
-    
-    return jsonify({
-        "id": product.id,
-        "name": product.name,
-        "price": product.price,
-        "rating": product.rating,
-        "reviews": product.review_count,
-        "category": product.category,
-        "stock": product.stock,
-        "image_url": product.image_url,
-        "description": product.description,
-        "all_reviews": [
-            {
-                "id": r.id,
-                "rating": r.rating,
-                "comment": r.comment,
-                "created_at": r.created_at.isoformat() if r.created_at else None
-            }
-            for r in reviews
-        ]
-    })
-
-# ----------------------
-# GET PRODUCTS BY CATEGORY
-# ----------------------
-@routes_bp.route('/api/products/category/<category>', methods=['GET'])
-def get_products_by_category(category):
-    products = Product.query.filter_by(category=category).all()
-    return jsonify([
-        {
-            "id": p.id,
-            "name": p.name,
-            "price": p.price,
-            "rating": p.rating,
-            "category": p.category,
-            "image": p.image_url
-        }
-        for p in products
-    ])
-
-# ----------------------
-# WISHLIST ROUTES
-# ----------------------
-@routes_bp.route('/api/wishlist', methods=['GET'])
-def get_wishlist():
-    user_id = request.args.get('user_id')
-    
-    if not user_id:
-        return jsonify({"error": "User ID required"}), 400
-    
-    wishlist_items = Wishlist.query.filter_by(user_id=user_id).all()
-    
-    # Get product details for each wishlist item
-    items_with_details = []
-    for item in wishlist_items:
-        product = Product.query.get(item.product_id)
-        if product:
-            items_with_details.append({
-                "wishlist_id": item.id,
-                "product_id": product.id,
-                "name": product.name,
-                "price": product.price,
-                "image": product.image_url,
-                "added_at": item.added_at.isoformat() if item.added_at else None
-            })
-    
-    return jsonify(items_with_details)
-
-@routes_bp.route('/api/wishlist/add', methods=['POST'])
-def add_to_wishlist():
-    data = request.json
-    user_id = data.get('user_id')
-    product_id = data.get('product_id')
-    
-    if not user_id or not product_id:
-        return jsonify({"error": "User ID and Product ID required"}), 400
-    
-    # Check if already in wishlist
-    existing = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).first()
-    if existing:
-        return jsonify({"message": "Product already in wishlist"}), 200
-    
-    # Check if product exists
-    product = Product.query.get(product_id)
-    if not product:
-        return jsonify({"error": "Product not found"}), 404
-    
-    # Add to wishlist
-    wishlist_item = Wishlist(user_id=user_id, product_id=product_id)
-    db.session.add(wishlist_item)
-    db.session.commit()
-    
-    return jsonify({
-        "message": "Added to wishlist",
-        "wishlist_id": wishlist_item.id
-    })
-
-@routes_bp.route('/api/wishlist/remove', methods=['POST'])
-def remove_from_wishlist():
-    data = request.json
-    user_id = data.get('user_id')
-    product_id = data.get('product_id')
-    
-    if not user_id or not product_id:
-        return jsonify({"error": "User ID and Product ID required"}), 400
-    
-    # Find and remove
-    wishlist_item = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).first()
-    if wishlist_item:
-        db.session.delete(wishlist_item)
-        db.session.commit()
-        return jsonify({"message": "Removed from wishlist"})
-    
-    return jsonify({"error": "Item not found in wishlist"}), 404
-
-@routes_bp.route('/api/wishlist/check', methods=['GET'])
-def check_wishlist():
-    user_id = request.args.get('user_id')
-    product_id = request.args.get('product_id')
-    
-    if not user_id or not product_id:
-        return jsonify({"error": "User ID and Product ID required"}), 400
-    
-    exists = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).first() is not None
-    return jsonify({"in_wishlist": exists})
-
-# ======================
-# DEBUG & DATABASE CHECK ROUTES
-# ======================
-
-@routes_bp.route('/api/check-db')
-def check_database():
-    """Check if database has products"""
-    try:
-        product_count = Product.query.count()
-        
-        return jsonify({
-            "status": "success",
-            "product_count": product_count,
-            "message": f"Found {product_count} products in database",
-            "is_empty": product_count == 0
-        })
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
-
 @routes_bp.route('/api/add-sample-products')
 def add_sample_products():
-    """Add sample fashion products to empty database"""
+    """Add sample skincare products to empty database"""
     try:
-        # Check current count
         current_count = Product.query.count()
-        
         if current_count > 0:
             return jsonify({
                 "status": "info",
                 "message": f"Already have {current_count} products. No need to add samples."
             })
         
-        # SAMPLE FASHION PRODUCTS
         sample_products = [
             {
-                "name": "Urban Threads Premium T-Shirt",
-                "price": 24.99,
-                "rating": 4.5,
-                "review_count": 128,
-                "category": "T-Shirts",
-                "stock": 100,
-                "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop",
-                "description": "100% Cotton, comfortable fit, modern design"
-            },
-            {
-                "name": "Designer Denim Jeans",
-                "price": 59.99,
-                "rating": 4.3,
-                "review_count": 89,
-                "category": "Jeans",
-                "stock": 50,
-                "image_url": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop",
-                "description": "Slim fit, stretch denim, premium quality"
-            },
-            {
-                "name": "Summer Floral Dress",
-                "price": 39.99,
-                "rating": 4.7,
-                "review_count": 203,
-                "category": "Dresses",
-                "stock": 30,
-                "image_url": "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?w=400&h=400&fit=crop",
-                "description": "Lightweight floral pattern, perfect for summer"
-            },
-            {
-                "name": "Classic Leather Jacket",
-                "price": 89.99,
+                "name": "Hydrating Face Cream",
+                "price": 29.99,
                 "rating": 4.6,
-                "review_count": 67,
-                "category": "Jackets",
-                "stock": 20,
-                "image_url": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop",
-                "description": "Genuine leather, timeless style"
+                "review_count": 142,
+                "category": "Moisturizers",
+                "stock": 120,
+                "image_url": "https://images.unsplash.com/photo-1592928307317-8f1f3e8b97d5?w=400&h=400&fit=crop",
+                "description": "Lightweight cream, deeply hydrates and nourishes skin"
             },
             {
-                "name": "Casual Sneakers",
-                "price": 49.99,
-                "rating": 4.4,
-                "review_count": 156,
-                "category": "Footwear",
-                "stock": 75,
-                "image_url": "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-                "description": "Comfortable everyday shoes, versatile style"
-            },
-            {
-                "name": "Winter Beanie",
-                "price": 19.99,
-                "rating": 4.2,
-                "review_count": 45,
-                "category": "Accessories",
-                "stock": 150,
-                "image_url": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=400&h=400&fit=crop",
-                "description": "Warm woolen beanie, multiple colors available"
-            },
-            {
-                "name": "Formal Blazer",
-                "price": 79.99,
-                "rating": 4.5,
-                "review_count": 92,
-                "category": "Suits & Blazers",
-                "stock": 25,
-                "image_url": "https://images.unsplash.com/photo-1594938374182-2510c5c63f8a?w=400&h=400&fit=crop",
-                "description": "Professional look, perfect for office wear"
-            },
-            {
-                "name": "Yoga Leggings",
-                "price": 34.99,
+                "name": "Vitamin C Serum",
+                "price": 39.99,
                 "rating": 4.8,
                 "review_count": 210,
-                "category": "Activewear",
+                "category": "Serums",
+                "stock": 80,
+                "image_url": "https://images.unsplash.com/photo-1598514983276-5678e0b46b70?w=400&h=400&fit=crop",
+                "description": "Brightens skin, reduces dark spots, antioxidant-rich"
+            },
+            {
+                "name": "Gentle Foaming Cleanser",
+                "price": 19.99,
+                "rating": 4.5,
+                "review_count": 95,
+                "category": "Cleansers",
+                "stock": 150,
+                "image_url": "https://images.unsplash.com/photo-1596461404969-5f0aa2b0c9d5?w=400&h=400&fit=crop",
+                "description": "Removes impurities and makeup without drying"
+            },
+            {
+                "name": "Sunscreen SPF 50",
+                "price": 24.99,
+                "rating": 4.7,
+                "review_count": 132,
+                "category": "Sun Care",
+                "stock": 100,
+                "image_url": "https://images.unsplash.com/photo-1596060179351-91b7aa42969b?w=400&h=400&fit=crop",
+                "description": "Broad-spectrum protection, lightweight, non-greasy"
+            },
+            {
+                "name": "Exfoliating Face Scrub",
+                "price": 21.99,
+                "rating": 4.3,
+                "review_count": 78,
+                "category": "Exfoliators",
                 "stock": 60,
-                "image_url": "https://images.unsplash.com/photo-1587563871167-1ee9c731c62a?w=400&h=400&fit=crop",
-                "description": "High-waisted, moisture-wicking, comfortable fit"
+                "image_url": "https://images.unsplash.com/photo-1600185361775-f1c18b9286c3?w=400&h=400&fit=crop",
+                "description": "Gently removes dead skin cells, smoothens texture"
+            },
+            {
+                "name": "Night Repair Cream",
+                "price": 34.99,
+                "rating": 4.6,
+                "review_count": 110,
+                "category": "Night Care",
+                "stock": 90,
+                "image_url": "https://images.unsplash.com/photo-1600185361633-4c3d7f1b30c8?w=400&h=400&fit=crop",
+                "description": "Rich night cream, repairs skin while you sleep"
+            },
+            {
+                "name": "Eye Gel for Dark Circles",
+                "price": 27.99,
+                "rating": 4.4,
+                "review_count": 65,
+                "category": "Eye Care",
+                "stock": 70,
+                "image_url": "https://images.unsplash.com/photo-1600185361595-c8c0c18c4b1f?w=400&h=400&fit=crop",
+                "description": "Reduces puffiness and dark circles, cooling effect"
+            },
+            {
+                "name": "Aloe Vera Face Mask",
+                "price": 22.99,
+                "rating": 4.7,
+                "review_count": 140,
+                "category": "Masks",
+                "stock": 50,
+                "image_url": "https://images.unsplash.com/photo-1598514983286-5678e0b46b70?w=400&h=400&fit=crop",
+                "description": "Soothes and hydrates, ideal for sensitive skin"
             }
         ]
-        
+
         added_count = 0
         for prod_data in sample_products:
-            # Create Product object
             product = Product(
                 name=prod_data["name"],
                 price=prod_data["price"],
@@ -546,52 +333,46 @@ def add_sample_products():
             )
             db.session.add(product)
             added_count += 1
-        
-        # Commit to database
+
         db.session.commit()
-        
+
         return jsonify({
             "status": "success",
-            "message": f"Added {added_count} fashion products to database",
+            "message": f"Added {added_count} skincare products to database",
             "products_added": [p["name"] for p in sample_products]
         })
-        
+
     except Exception as e:
         return jsonify({
             "status": "error",
             "error": str(e)
         }), 500
 
+
+# ----------------------
+# DEBUG INFO
+# ----------------------
 @routes_bp.route('/api/debug-info')
 def debug_info():
-    """Get debug information about the backend"""
     import os
-    
     return jsonify({
         "backend_running": True,
-        "store_type": "Fashion E-commerce",
+        "store_type": "SkinGlow E-commerce",
         "database_url_exists": bool(os.environ.get('DATABASE_URL')),
         "total_products": Product.query.count(),
         "total_users": User.query.count(),
         "total_orders": Order.query.count(),
         "environment": "production"
     })
-# ======================
-# DATABASE INITIALIZATION
-# ======================
 
+
+# ----------------------
+# DATABASE INITIALIZATION
+# ----------------------
 @routes_bp.route('/api/init-db')
 def init_database():
-    """Initialize/Recreate all database tables"""
     try:
-        from extensions import db
-        
-        # Drop all tables (for development/testing only!)
-        # db.drop_all()
-        
-        # Create all tables
         db.create_all()
-        
         return jsonify({
             "success": True,
             "message": "Database tables created successfully"
