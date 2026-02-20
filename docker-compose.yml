@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    container_name: skinglow-backend
+    restart: always
+    ports:                     # <-- changed from 'expose' to 'ports'
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    container_name: skinglow-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
