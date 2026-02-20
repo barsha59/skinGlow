@@ -1,62 +1,47 @@
-# app.py
+# backend/app.py
 from flask import Flask
 from flask_cors import CORS
 from extensions import db
 from routes import routes_bp
 import os
-import models  
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
 import stripe
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
-print("Stripe key loaded:", stripe.api_key)  # <--- for debug
+print("Stripe key loaded:", stripe.api_key)  # for debug
 
+# Create Flask app
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# ---- DATABASE CONFIGURATION FOR RENDER POSTGRESQL ----
-database_url = os.environ.get('DATABASE_URL')
+# ---------- SQLITE DATABASE CONFIG ----------
+basedir = os.path.abspath(os.path.dirname(__file__))
+instance_path = os.path.join(basedir, "instance")
+os.makedirs(instance_path, exist_ok=True)
 
-if database_url:
-    # Render provides 'postgres://' but SQLAlchemy needs 'postgresql://'
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
-    else:
-        # Ensure we're using pg8000 driver
-        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print("✅ Using PostgreSQL database from Render")
-else:
-    # Fallback to SQLite for local development
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    instance_path = os.path.join(basedir, "instance")
-    os.makedirs(instance_path, exist_ok=True)
-    
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "sqlite:///" + os.path.join(instance_path, "database.db")
-    )
-    print("⚠️ Using SQLite database (local development)")
-
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(instance_path, "database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
 
-# ---- INIT DB ----
+# Initialize DB
 db.init_app(app)
 
-# 🔥 CREATE TABLES HERE
+# Create tables
 with app.app_context():
     db.create_all()
-    print("✅ Database & tables created")
+    print("✅ SQLite database & tables created")
 
-# ---- REGISTER ROUTES ----
+# Register routes
 app.register_blueprint(routes_bp)
 
 @app.route("/")
 def home():
-    return {"message": "skinGlow Website 3 API Running - PostgreSQL Edition"}
+    return {"message": "SkinGlow Website API Running"}
 
+# ---------- RUN APP ----------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5002))  # Uses PORT from environment or defaults to 5001
+    port = int(os.environ.get("PORT", 5002))  # Use PORT from env or default
     app.run(host="0.0.0.0", port=port, debug=True)

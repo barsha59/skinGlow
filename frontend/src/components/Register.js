@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import API_URL from "../config"; // Import API_URL from config
+import { API_URL } from '../config';  // ✅ correct for named export
 
 const Register = ({ onRegister }) => {
 const [username, setUsername] = useState("");
@@ -31,10 +31,10 @@ const [username, setUsername] = useState("");
 
     try {
       const response = await axios.post(`${API_URL}/api/register`, {
-  username,    // changed 'name' to 'username'
+  name: username,    // changed 'name' to 'username'
   email,
   password,
-  confirm_password: confirmPassword  // optional, if backend expects it
+  // confirm_password: confirmPassword  // optional, if backend expects it
 });
       
       // Store user info
