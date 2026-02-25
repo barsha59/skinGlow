@@ -12,6 +12,8 @@ import traceback
 from functools import wraps
 
 API_KEY = os.environ.get("API_KEY")  # should be set in your .env / docker-compose
+print("Loaded API_KEY:", API_KEY) 
+
 
 def require_api_key(f):
     @wraps(f)
