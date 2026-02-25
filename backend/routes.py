@@ -14,6 +14,7 @@ routes_bp = Blueprint("routes", __name__)
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 print("Stripe API Key loaded?", stripe.api_key is not None)
 
+
 # ----------------------
 # GET all products
 # ----------------------
